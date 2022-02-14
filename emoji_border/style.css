@@ -1,0 +1,60 @@
+html,body{
+  height:100vh;
+  width:100vw;
+  margin: 0px;
+  overflow: hidden;
+}
+
+:root {
+  --content: "♥";
+  --time: 5s;
+  --color: hotpink;
+}
+
+
+/*
+CONTROLS
+*/
+#controls {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/*
+HEARTS HTML
+*/
+
+.heart {
+  position: absolute;
+  height: 30px;
+  width: 30px;
+}
+
+.heart:after {
+  color: var(--color);
+  display: block;
+  content: var(--content);
+  animation: love infinite var(--time);
+  opacity: 0;
+  text-align: center;
+}
+
+@keyframes love {
+  0%{
+    margin-top:100%;
+    opacity: 0;
+  }
+  20%{
+    opacity: 1;
+  }
+  80%{
+    opacity: 1;
+  }
+  100%{
+    margin-top:-100%;
+    opacity: 0;
+  }
+}
