@@ -78,7 +78,7 @@ class BooleanSetting extends Setting {
   }
   load() {
     let value = PageParams.get(this.name);
-    value = ['false', '0', '', undefined].includes(value?.toLowerCase()) ? false : true;
+    value = !value || ['false', '0', '', undefined].includes(value.toLowerCase()) ? false : true;
     this.value = value;
     this.update();
   }
@@ -96,7 +96,7 @@ class RangeSetting extends Setting {
   }
   update(value) {
     super.update(value);
-    if (this.elements?.label) {
+    if (this.elements && this.elements.label) {
       this.elements.label.innerText = `${this.label}: ${this.options.prefix ?? ''}${this.value}${this.options.suffix ?? ''}`;
     }
   }
@@ -148,11 +148,13 @@ class Settings {
   }
 
   static updateURI() {
+    const outputEl = document.getElementById('overlay-uri');
+    if (!outputEl) return;
     const params = {};
     this.items.forEach(setting => {
       params[setting.name] = setting.value;
     });
     const uri = `${location.origin}${location.pathname}?${new URLSearchParams(params).toString()}`;
-    document.getElementById('overlay-uri').value = uri;
+    outputEl.value = uri;
   }
 }
