@@ -46,15 +46,16 @@ const addHearts = (side) => {
   document.body.appendChild(heart);
 }
 
-for (let i = 0; i < window.innerWidth / 12; i++) {
+const density = 1;
+for (let i = 0; i < (window.innerWidth / 25) * density; i++) {
   setTimeout(() => addHearts('top'), i * 66);
 }
-for (let i = 0; i < window.innerHeight / 12; i++) {
+for (let i = 0; i < (window.innerWidth / 25) * density; i++) {
   setTimeout(() => addHearts('bottom'), i * 66);
 }
-for (let i = 0; i < window.innerHeight / 35; i++) {
+for (let i = 0; i < (window.innerHeight / 35) * density; i++) {
   setTimeout(() => addHearts('left'), i * 66);
 }
-for (let i = 0; i < window.innerHeight / 35; i++) {
+for (let i = 0; i < (window.innerHeight / 35) * density; i++) {
   setTimeout(() => addHearts('right'), i * 66);
 }
