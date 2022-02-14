@@ -7,7 +7,7 @@ html,body{
 
 :root {
   --content: "♥";
-  --time: 5s;
+  --speed: 5s;
   --color: hotpink;
 }
 
@@ -21,6 +21,8 @@ CONTROLS
   display: flex;
   align-items: center;
   justify-content: center;
+  opacity: 0;
+  transition: opacity 3s;
 }
 
 /*
@@ -37,12 +39,12 @@ HEARTS HTML
   color: var(--color);
   display: block;
   content: var(--content);
-  animation: love infinite var(--time);
+  animation: move infinite var(--speed);
   opacity: 0;
   text-align: center;
 }
 
-@keyframes love {
+@keyframes move {
   0%{
     margin-top:100%;
     opacity: 0;
