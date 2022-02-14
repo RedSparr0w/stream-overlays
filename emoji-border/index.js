@@ -1,64 +1,98 @@
-document.addEventListener("DOMContentLoaded", function(event) {
-  /* Adding hearts */
-  const addHearts = (side) => {
-    var size = Math.floor(Math.random() * 20) + 20;
-    var offset = Math.random() * 100;
-    const rotation = (Math.random() * 30) - 15;
+let content, speed, color, multiplier;
 
-    const heart = document.createElement('div');
-    heart.className = 'heart';
-    heart.style.fontSize = `${size}px`;
-    heart.style.transform = `rotate(${rotation}deg)`;
-
-    switch (side) {
-      case 'top':
-      case 'bottom':
-        heart.style.left = `${offset}%`;
-        break;
-      case 'left':
-      case 'right':
-        heart.style.top = `${offset}%`;
-        break;
+const createParticle = (x, y, type, value) => {
+  const particle = document.createElement('particle');
+  document.body.appendChild(particle);
+  let destinationX = 0;
+  let destinationY = -((Math.random() * 25) + 25);
+  let rotation = (Math.random() - 0.5) * 90;
+  let delay = Math.random() * 1e3;
+  
+  particle.innerHTML = type.split('')[Math.floor(Math.random() * type.length)];
+  particle.style.fontSize = `${Math.random() * 20 + 15}px`;
+  const animation = particle.animate([
+    {
+      transform: `translate(-50%, -50%) translate(${x}px, ${y}px) rotate(${-rotation}deg)`,
+      opacity: 0,
+    },
+    {
+      offset: 0.2,
+      opacity: 1,
+    },
+    {
+      offset: 0.5,
+      opacity: 1,
+    },
+    {
+      transform: `translate(-50%, -50%) translate(${x + destinationX}px, ${y + destinationY}px) rotate(${rotation}deg)`,
+      opacity: 0,
     }
-
-    switch (side) {
-      case 'top':
-        heart.style.top = '0px';
-        break;
-      case 'bottom':
-        heart.style.bottom = '10px';
-        break;
-      case 'left':
-        heart.style.left = `${Math.random() * 25}px`;
-        break;
-      case 'right':
-        heart.style.right = `${Math.random() * 25}px`;
-        break;
-    }
-
-    document.body.appendChild(heart);
+  ], {
+    duration: (speed.value * 500) + (Math.random() * speed.value * 500),
+    delay: delay
+  });
+  animation.onfinish = (e) =>{
+    // createParticle(x, y, type, value);
+    removeParticle(e);
   }
-
-  const density = 1;
-  for (let i = 0; i < (window.innerWidth / 25) * density; i++) {
-    setTimeout(() => addHearts('top'), i * 66);
-  }
-  for (let i = 0; i < (window.innerWidth / 25) * density; i++) {
-    setTimeout(() => addHearts('bottom'), i * 66);
-  }
-  for (let i = 0; i < (window.innerHeight / 35) * density; i++) {
-    setTimeout(() => addHearts('left'), i * 66);
-  }
-  for (let i = 0; i < (window.innerHeight / 35) * density; i++) {
-    setTimeout(() => addHearts('right'), i * 66);
-  }
-
-  new TextSetting('Symbol', 'content', '♥', {prefix: '"', suffix: '"'});
-  new RangeSetting('Speed', 'speed', 5, {min: 0.5, max: 10, step: 0.1, suffix: 's'});
-  new ColorSetting('Color', 'color', '#ff69b4');
-
+}
+function removeParticle (e) {
+  e.srcElement.effect.target.remove();
+}
+document.addEventListener("DOMContentLoaded", function(event) {// Our settings
+  content = new TextSetting('Symbols', 'content', '♥xo', {prefix: '"', suffix: '"'});
+  speed = new RangeSetting('Speed', 'speed', 5, {min: 0.5, max: 10, step: 0.1, suffix: 's'});
+  multiplier = new RangeSetting('Multiplier', 'multiplier', 10, {min: 1, max: 100, step: 1, suffix: '×'});
+  color = new ColorSetting('Color', 'color', '#ff69b4');
   // Hide the controls
   const hideControls = new BooleanSetting(undefined, 'hide-controls', true);
   hideControls.value ? document.getElementById('controls').remove() : document.getElementById('controls').style.opacity = '1';
-  hideControls.update(true);
+  setTimeout(() => hideControls.update(true), 1);
+
+  /* Adding hearts */
+  const addHearts = (side) => {
+    let x = 0;
+    let y = 0;
+    switch (side) {
+      case 'top':
+      case 'bottom':
+        x = Math.random() * window.innerWidth;
+        break;
+      case 'left':
+      case 'right':
+        y = Math.random() * window.innerHeight;
+        break;
+    }
+
+    switch (side) {
+      case 'top':
+        y = 20 + (Math.random() * 20);
+        break;
+      case 'bottom':
+        y = window.innerHeight - (Math.random() * 10);
+        break;
+      case 'left':
+        x = Math.random() * 50;
+        break;
+      case 'right':
+        x = window.innerWidth - (Math.random() * 50);
+        break;
+    }
+
+    createParticle(x, y, content.value);
+  }
+
+  setInterval(() => {
+    for (let i = 0; i < multiplier.value; i++) {
+      setTimeout(() => {
+        addHearts('top')
+        addHearts('top')
+        addHearts('bottom')
+        addHearts('bottom')
+        addHearts('left')
+        addHearts('right')
+      }, i);
+    }
+  }, 1000);
+
 });
