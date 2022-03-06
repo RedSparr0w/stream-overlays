@@ -4,17 +4,25 @@
 const Settings = {
   // Movement
   fps: 30,
-  mspf: Math.floor(1000 / 30),
   velocity: { x: 0, y: -10 },
   gravity: { x: 0, y: -0.01 },
   // Display
   area: 'all',
+  // Edge offsets
+  eo_top: { min: 30, max: 75 },
+  eo_right: { min: 0, max: 45 },
+  eo_bottom: { min: -10, max: 35 },
+  eo_left: { min: 0, max: 45 },
   text: '❤❤xo',
   text_color: { r: 244, g: 0, b: 147 },
   size: { min: 30, max: 45 },
   amount: 300,
   max_age: 2500,
   fade: { min: 20, max: 80 },
+};
+const DefaultSettings = JSON.parse(JSON.stringify(Settings));
+const Values = {
+  mspf: Math.floor(1000 / Settings.fps),
   // Performance
   ms_per_frame: 0,
   // Output
@@ -25,8 +33,22 @@ const Settings = {
 const PageParams = new URLSearchParams(window.location.search);
 Object.keys(Settings).forEach(k => {
   try {
+    if (typeof Settings[k] == 'object') {
+      for (const key in Settings[k]) {
+        const value = PageParams.get(`${k}.${key}`);
+        // If it doesn't exist, continue
+        if (value == undefined) return;
+        // Update our value
+        Settings[k][key] = JSON.parse(value);
+      }
+      return;
+    }
+    // Get our value
     const value = PageParams.get(k);
-    if (value != undefined) Settings[k] = JSON.parse(PageParams.get(k));
+    // If it doesn't exist, continue
+    if (value == undefined) return;
+    // Update our value
+    Settings[k] = JSON.parse(PageParams.get(k));
   }catch(e){}
 });
 
@@ -35,10 +57,17 @@ const UpdateURI = () => {
   const params = {};
   Object.keys(Settings).forEach(k => {
     if (typeof Settings[k] == 'function') return;
+    if (JSON.stringify(Settings[k]) == JSON.stringify(DefaultSettings[k])) return;
+    if (typeof Settings[k] == 'object') {
+      for (const key in Settings[k]) {
+        params[`${k}.${key}`] = JSON.stringify(Settings[k][key]);
+      }
+      return;
+    }
     params[k] = JSON.stringify(Settings[k]);
   });
   const uri = `${location.origin}${location.pathname}?${new URLSearchParams(params).toString()}`;
-  Settings.url_address = uri;
+  Values.url_address = uri;
 };
 
 // Create our settings GUI
@@ -59,7 +88,7 @@ const Movement = Pane.addFolder({
 });
 const FPS = Movement.addInput(Settings, 'fps', { min: 10, max: 144, step: 1 });
 FPS.on('change', (ev) => {
-  Settings.mspf = Math.floor(1000 / ev.value);
+  Values.mspf = Math.floor(1000 / ev.value);
 });
 Movement.addInput(Settings, 'velocity', {
   x: { min: -100, max: 100, step: 0.1 },
@@ -75,7 +104,7 @@ const Display = Pane.addFolder({
   title: 'Display',
   expanded: true,
 });
-Display.addInput(Settings, 'area', {
+const Area = Display.addInput(Settings, 'area', {
   options: {
     All: 'all',
     Edges: 'top top right bottom bottom left',
@@ -85,6 +114,18 @@ Display.addInput(Settings, 'area', {
     Left: 'left',
   },
 });
+const EdgeOffsets = Display.addFolder({
+  title: 'Edge Offsets',
+  expanded: true,
+  hidden: Settings.area == 'all',
+});
+Area.on('change', (ev) => {
+  EdgeOffsets.hidden = ev.value == 'all';
+});
+EdgeOffsets.addInput(Settings, 'eo_top', { label: 'Top', min: -200, max: 200, step: 1 });
+EdgeOffsets.addInput(Settings, 'eo_right', { label: 'Right', min: -200, max: 200, step: 1 });
+EdgeOffsets.addInput(Settings, 'eo_bottom', { label: 'Bottom', min: -200, max: 200, step: 1 });
+EdgeOffsets.addInput(Settings, 'eo_left', { label: 'Left', min: -200, max: 200, step: 1 });
 Display.addInput(Settings, 'text');
 Display.addInput(Settings, 'text_color');
 Display.addInput(Settings, 'size', { min: 1, max: 100, step: 1 });
@@ -97,7 +138,7 @@ const Performance = Pane.addFolder({
   title: 'Performance',
   expanded: true,
 });
-Performance.addMonitor(Settings, 'ms_per_frame', {
+Performance.addMonitor(Values, 'ms_per_frame', {
   view: 'graph',
   interval: 200,
   min: 0,
@@ -109,7 +150,7 @@ const Output = Pane.addFolder({
   title: 'Output',
   expanded: true,
 });
-const uriComponent = Output.addMonitor(Settings, 'url_address', {
+const uriComponent = Output.addMonitor(Values, 'url_address', {
   interval: 1000,
 });
 const copyButton = Output.addButton({title: 'Copy URL'});
@@ -153,10 +194,10 @@ window.onload = () => {
     // calculate x
     switch (side) {
       case 'left':
-        x = (Math.random() * Settings.size.max);
+        x = Math.random() * (Settings.eo_left.max - Settings.eo_left.min) + Settings.eo_left.min;
         break;
       case 'right':
-        x = canvas.width - (Math.random() * Settings.size.max);
+        x = canvas.width - (Math.random() * (Settings.eo_right.max - Settings.eo_right.min) + Settings.eo_right.min);
         break;
       case 'top':
       case 'bottom':
@@ -168,10 +209,10 @@ window.onload = () => {
     // calculate y
     switch (side) {
       case 'top':
-        y = Settings.size.max + (Math.random() * Settings.size.max);
+        y = Math.random() * (Settings.eo_top.max - Settings.eo_top.min) + Settings.eo_top.min;
         break;
       case 'bottom':
-        y = canvas.height + (Math.random() * Settings.size.max);
+        y = canvas.height - (Math.random() * (Settings.eo_bottom.max - Settings.eo_bottom.min) + Settings.eo_bottom.min);
         break;
       case 'left':
       case 'right':
@@ -184,22 +225,22 @@ window.onload = () => {
     this.x = x;
     this.y = y;
 
-    this.vel_x = Settings.velocity.x / Settings.mspf;
-    this.vel_y = Settings.velocity.y / Settings.mspf;
+    this.vel_x = Settings.velocity.x / Values.mspf;
+    this.vel_y = Settings.velocity.y / Values.mspf;
 
-    this.grav_x = Settings.gravity.x / Settings.mspf;
-    this.grav_y = Settings.gravity.y / Settings.mspf;
+    this.grav_x = Settings.gravity.x / Values.mspf;
+    this.grav_y = Settings.gravity.y / Values.mspf;
 
     this.size = Settings.size.min + (Math.random() * (Settings.size.max - Settings.size.min));
     this.opacity = 0;
     this.fade_in = (Settings.max_age/100) * Settings.fade.min;
-    this.fade_in_amount = 1 / (this.fade_in / Settings.mspf);
+    this.fade_in_amount = 1 / (this.fade_in / Values.mspf);
     this.fade_out = (Settings.max_age/100) * Settings.fade.max;
-    this.fade_out_amount = 1 / ((Settings.max_age - this.fade_out) / Settings.mspf);
+    this.fade_out_amount = 1 / ((Settings.max_age - this.fade_out) / Values.mspf);
 
     this.id = particleIndex;
     this.age = 0;
-    this.delay = Math.random() * Settings.max_age;
+    this.delay = Math.random() * 1000;
 
     // Add new particle to the index
     particles[particleIndex++] = this;
@@ -208,7 +249,7 @@ window.onload = () => {
   // Some prototype methods for the particle's "draw" function
   Particle.prototype.draw = function() {
     if (this.delay > 0) {
-      this.delay -= Settings.mspf;
+      this.delay -= Values.mspf;
       return;
     }
     // Move the particle
@@ -220,7 +261,7 @@ window.onload = () => {
     this.vel_y += this.grav_y;
 
     // Age the particle
-    this.age += Settings.mspf;
+    this.age += Values.mspf;
 
     // If Particle is old, delete it so we can get a new one
     if (this.age >= Settings.max_age || (this.y + this.size) < 0) {
@@ -233,13 +274,14 @@ window.onload = () => {
     context.textAlign = 'center';
     context.fillText(this.text, this.x, this.y);
   };
-  let prevTime = Date.now();
-  let lastFrameTime = 0;  // the last frame time
+
+  // the last frame time
+  let lastFrameTime = 0;
   function update(time){
-    if(time - lastFrameTime < Settings.mspf - 1){ //skip the frame if the call is too early
+    //skip the frame if the call is too early
+    if(time - lastFrameTime < Values.mspf - 1){
       return requestAnimationFrame(update);
     }
-    lastFrameTime = time; // remember the time of the rendered frame
 
     // Set a transparent background
     context.clearRect(0, 0, canvas.width, canvas.height);
@@ -256,10 +298,12 @@ window.onload = () => {
       particles[i].draw();
     }
 
-    const now = Date.now();
-    Settings.ms_per_frame = now - prevTime;
-    prevTime = now;
-    requestAnimationFrame(update); // get next farme
+    // calculate how long it took between frames
+    Values.ms_per_frame = time - lastFrameTime;
+    lastFrameTime = time;
+
+    // get next frame
+    requestAnimationFrame(update);
   }
   requestAnimationFrame(update); // start animation
 };
