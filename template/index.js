@@ -1,76 +1,148 @@
+// #region Settings
+
 // Our default settings
 const Settings = {
   // Movement
-  render_time: 20,
-  velocity_x: 0,
-  velocity_y: -3,
-  gravity: -0.02,
-  // Display
-  text: '❤❤xo',
-  color: [244, 0, 147],
-  size: 40,
-  size_variance: 15,
-  amount: 200,
-  max_age: 3000,
-  fade_in: 20,
-  fade_out: 80,
+  fps: 30,
+};
+const DefaultSettings = JSON.parse(JSON.stringify(Settings));
+const Values = {
+  mspf: Math.floor(1000 / Settings.fps),
+  // Performance
+  ms_per_frame: 0,
+  // Output
+  url_address: '',
 };
 
-// To get our user specified values
+// Get our user specified values
 const PageParams = new URLSearchParams(window.location.search);
 Object.keys(Settings).forEach(k => {
   try {
+    if (typeof Settings[k] == 'object') {
+      for (const key in Settings[k]) {
+        const value = PageParams.get(`${k}.${key}`);
+        // If it doesn't exist, continue
+        if (value == undefined) return;
+        // Update our value
+        Settings[k][key] = JSON.parse(value);
+      }
+      return;
+    }
+    // Get our value
     const value = PageParams.get(k);
-    if (value != undefined) Settings[k] = JSON.parse(PageParams.get(k));
+    // If it doesn't exist, continue
+    if (value == undefined) return;
+    // Update our value
+    Settings[k] = JSON.parse(PageParams.get(k));
   }catch(e){}
 });
 
-// Update the current URI
+// Update the output URI
 const UpdateURI = () => {
   const params = {};
   Object.keys(Settings).forEach(k => {
     if (typeof Settings[k] == 'function') return;
+    if (JSON.stringify(Settings[k]) == JSON.stringify(DefaultSettings[k])) return;
+    if (typeof Settings[k] == 'object') {
+      for (const key in Settings[k]) {
+        params[`${k}.${key}`] = JSON.stringify(Settings[k][key]);
+      }
+      return;
+    }
     params[k] = JSON.stringify(Settings[k]);
   });
   const uri = `${location.origin}${location.pathname}?${new URLSearchParams(params).toString()}`;
-  history.replaceState({}, undefined, uri);
+  Values.url_address = uri;
 };
 
-// Creating a GUI with our settings
-const GUI = new dat.GUI({name: 'Particles controls'});
-
-const Movement = GUI.addFolder('Movement');
-Movement.add(Settings, 'render_time', 1, 50).onChange(UpdateURI);
-Movement.add(Settings, 'velocity_x', -10, 10, 0.01).onChange(UpdateURI);
-Movement.add(Settings, 'velocity_y', -10, 10, 0.01).onChange(UpdateURI);
-Movement.add(Settings, 'gravity', -1, 1, 0.01).onChange(UpdateURI);
-
-const Display = GUI.addFolder('Display');
-Display.add(Settings, 'text').onChange(UpdateURI);
-Display.addColor(Settings, 'color').onChange(UpdateURI);
-Display.add(Settings, 'size', 5, 100).onChange(UpdateURI);
-Display.add(Settings, 'size_variance', 0, 50).onChange(UpdateURI);
-Display.add(Settings, 'amount', 1, 1000).onChange(UpdateURI);
-Display.add(Settings, 'max_age', 500, 10000).onChange(UpdateURI);
-Display.add(Settings, 'fade_in', 0, 100).onChange(v => {
-  if (v > Settings.fade_out) Settings.fade_out = v;
-  GUI.updateDisplay();
-  UpdateURI();
+// Create our settings GUI
+const Pane = new Tweakpane.Pane({
+  title: 'Settings',
+  expanded: true,
 });
-Display.add(Settings, 'fade_out', 0, 100).onChange(v => {
-  if (v < Settings.fade_in) Settings.fade_in = v;
-  GUI.updateDisplay();
+Pane.registerPlugin(TweakpaneEssentialsPlugin);
+
+Pane.on('change', (ev) => {
   UpdateURI();
 });
 
-// Update the GUi (force onchange events)
-const updateGUI = (menu) => {
-  menu.open();
-  for(const folder in menu.__folders) {
-    updateGUI(menu.__folders[folder]);
+// Movement settings
+const Movement = Pane.addFolder({
+  title: 'Movement',
+  expanded: true,
+});
+const FPS = Movement.addInput(Settings, 'fps', { min: 10, max: 144, step: 1 });
+FPS.on('change', (ev) => {
+  Values.mspf = Math.floor(1000 / ev.value);
+});
+
+// Performance settings
+const Performance = Pane.addFolder({
+  title: 'Performance',
+  expanded: true,
+});
+Performance.addMonitor(Values, 'ms_per_frame', {
+  view: 'graph',
+  interval: 200,
+  min: 0,
+  max: 100,
+});
+
+// Output settings
+const Output = Pane.addFolder({
+  title: 'Output',
+  expanded: true,
+});
+const uriComponent = Output.addMonitor(Values, 'url_address', {
+  interval: 1000,
+});
+const copyButton = Output.addButton({title: 'Copy URL'});
+// Copy the output uri text when the button is clicked
+copyButton.on('click', (ev) => {
+  const input = uriComponent.controller_.view.valueElement.querySelector('input');
+  input.select();
+  input.setSelectionRange(0, 99999); /* For mobile devices */
+  navigator.clipboard.writeText(input.value);
+  ev.target.title = 'Copied!';
+  setTimeout(() => ev.target.title = 'Copy URL', 1500);
+});
+
+// Update our uri string now
+UpdateURI();
+
+// #endregion Settings
+
+// #region Canvas
+// Wait until our document is ready
+window.onload = () => {
+  // Initialise an empty canvas and place it on the page
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  document.body.appendChild(canvas);
+
+  // the last frame time
+  let lastFrameTime = 0;
+  function update(time){
+    //skip the frame if the call is too early
+    if(time - lastFrameTime < Values.mspf - 1){
+      return requestAnimationFrame(update);
+    }
+
+    // Set a transparent background
+    context.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw to our canvas
+
+    // calculate how long it took between frames
+    Values.ms_per_frame = time - lastFrameTime;
+    lastFrameTime = time;
+
+    // get next frame
+    requestAnimationFrame(update);
   }
-  for(const controller of menu.__controllers) {
-    controller.setValue(controller.getValue());
-  }
+  requestAnimationFrame(update); // start animation
 };
-updateGUI(GUI);
+
+// #endregion Canvas
