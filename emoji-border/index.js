@@ -14,7 +14,7 @@ const Settings = {
   max_age: 2500,
   fade_in: 20,
   fade_out: 80,
-}
+};
 
 // To get our user specified values
 const PageParams = new URLSearchParams(window.location.search);
@@ -26,7 +26,7 @@ Object.keys(Settings).forEach(k => {
 });
 
 // Update the current URI
-UpdateURI = () => {
+const UpdateURI = () => {
   const params = {};
   Object.keys(Settings).forEach(k => {
     if (typeof Settings[k] == 'function') return;
@@ -34,7 +34,7 @@ UpdateURI = () => {
   });
   const uri = `${location.origin}${location.pathname}?${new URLSearchParams(params).toString()}`;
   history.replaceState({}, undefined, uri);
-}
+};
 
 // Creating a GUI with our settings
 const GUI = new dat.GUI({name: 'Particles controls'});
@@ -63,6 +63,18 @@ Display.add(Settings, 'fade_out', 0, 100).onChange(v => {
   UpdateURI();
 });
 
+// Update the GUi (force onchange events)
+const updateGUI = (menu) => {
+  menu.open();
+  for(const folder in menu.__folders) {
+    updateGUI(menu.__folders[folder]);
+  }
+  for(const controller of menu.__controllers) {
+    controller.setValue(controller.getValue());
+  }
+};
+updateGUI(GUI);
+
 
 // Adding the particles
 window.onload = () => {
@@ -75,8 +87,8 @@ window.onload = () => {
 
   // No longer setting velocites as they will be random
   // Set up object to contain particles and set some default values
-  let particles = {},
-      particleIndex = 0;
+  const particles = {};
+  let particleIndex = 0;
 
   // Set up a function to create multiple particles
   function Particle(side = 'top') {
@@ -162,16 +174,16 @@ window.onload = () => {
     // context.beginPath();
     // context.fillStyle="#0000ff";
     // // Draws a circle of radius 20 at the coordinates 100,100 on the canvas
-    // context.arc(this.x, this.y, this.size, 0, Math.PI*2, true); 
+    // context.arc(this.x, this.y, this.size, 0, Math.PI*2, true);
     // context.closePath();
     // context.fill();
     context.font = `${this.size}px Arial`;
     context.fillStyle = `rgba(${Settings.color[0]}, ${Settings.color[1]}, ${Settings.color[2]}, ${this.age <= this.fade_in ? this.opacity += this.fade_in_amount : this.age >= this.fade_out ? this.opacity -= this.fade_out_amount : this.opacity})`;
     context.textAlign = 'center';
     context.fillText(this.text, this.x, this.y);
-  }
+  };
 
-  drawCanvas = () => {
+  const drawCanvas = () => {
     // Fill the backgorund
     // context.fillStyle = "rgba(20,20,20,0.8)";
     // context.fillRect(0, 0, canvas.width, canvas.height);
@@ -188,10 +200,10 @@ window.onload = () => {
       new Particle('left');
     }
 
-    for (var i in particles) {
+    for (const i in particles) {
       particles[i].draw();
     }
     setTimeout(drawCanvas, Settings.render_time);
-  }
+  };
   drawCanvas();
 };

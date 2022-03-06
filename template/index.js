@@ -14,7 +14,7 @@ const Settings = {
   max_age: 3000,
   fade_in: 20,
   fade_out: 80,
-}
+};
 
 // To get our user specified values
 const PageParams = new URLSearchParams(window.location.search);
@@ -26,7 +26,7 @@ Object.keys(Settings).forEach(k => {
 });
 
 // Update the current URI
-UpdateURI = () => {
+const UpdateURI = () => {
   const params = {};
   Object.keys(Settings).forEach(k => {
     if (typeof Settings[k] == 'function') return;
@@ -34,7 +34,7 @@ UpdateURI = () => {
   });
   const uri = `${location.origin}${location.pathname}?${new URLSearchParams(params).toString()}`;
   history.replaceState({}, undefined, uri);
-}
+};
 
 // Creating a GUI with our settings
 const GUI = new dat.GUI({name: 'Particles controls'});
@@ -65,11 +65,12 @@ Display.add(Settings, 'fade_out', 0, 100).onChange(v => {
 
 // Update the GUi (force onchange events)
 const updateGUI = (menu) => {
+  menu.open();
   for(const folder in menu.__folders) {
     updateGUI(menu.__folders[folder]);
   }
   for(const controller of menu.__controllers) {
     controller.setValue(controller.getValue());
   }
-}
+};
 updateGUI(GUI);
