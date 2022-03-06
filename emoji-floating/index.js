@@ -5,7 +5,7 @@ const Settings = {
   // Movement
   fps: 30,
   mspf: Math.floor(1000 / 30),
-  velocity: { x: 0, y: -2 },
+  velocity: { x: 0, y: -10 },
   gravity: { x: 0, y: -0.01 },
   // Display
   area: 'all',
@@ -62,8 +62,8 @@ FPS.on('change', (ev) => {
   Settings.mspf = Math.floor(1000 / ev.value);
 });
 Movement.addInput(Settings, 'velocity', {
-  x: { min: -10, max: 10, step: 0.01 },
-  y: { min: -10, max: 10, step: 0.01 },
+  x: { min: -100, max: 100, step: 0.1 },
+  y: { min: -100, max: 100, step: 0.1 },
 });
 Movement.addInput(Settings, 'gravity',  {
   x: { min: -10, max: 10, step: 0.01 },
@@ -184,8 +184,11 @@ window.onload = () => {
     this.x = x;
     this.y = y;
 
-    this.vx = Settings.velocity.x * Settings.mspf / 100;
-    this.vy = Settings.velocity.y * Settings.mspf / 100;
+    this.vel_x = Settings.velocity.x / Settings.mspf;
+    this.vel_y = Settings.velocity.y / Settings.mspf;
+
+    this.grav_x = Settings.gravity.x / Settings.mspf;
+    this.grav_y = Settings.gravity.y / Settings.mspf;
 
     this.size = Settings.size.min + (Math.random() * (Settings.size.max - Settings.size.min));
     this.opacity = 0;
@@ -209,12 +212,12 @@ window.onload = () => {
       return;
     }
     // Move the particle
-    this.x += this.vx;
-    this.y += this.vy;
+    this.x += this.vel_x;
+    this.y += this.vel_y;
 
     // Adjust for gravity
-    this.vx += Settings.gravity.x / Settings.mspf;
-    this.vy += Settings.gravity.y / Settings.mspf;
+    this.vel_x += this.grav_x;
+    this.vel_y += this.grav_y;
 
     // Age the particle
     this.age += Settings.mspf;
