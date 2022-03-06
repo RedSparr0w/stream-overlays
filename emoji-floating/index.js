@@ -24,6 +24,8 @@ Object.keys(Settings).forEach(k => {
     if (value != undefined) Settings[k] = JSON.parse(PageParams.get(k));
   }catch(e){}
 });
+
+// Update the current URI
 UpdateURI = () => {
   const params = {};
   Object.keys(Settings).forEach(k => {
@@ -32,7 +34,6 @@ UpdateURI = () => {
   const uri = `${location.origin}${location.pathname}?${new URLSearchParams(params).toString()}`;
   history.replaceState({}, undefined, uri);
 }
-
 
 // Creating a GUI with our settings
 const GUI = new dat.GUI({name: 'Particles controls'});
