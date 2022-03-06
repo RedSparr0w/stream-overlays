@@ -29,6 +29,7 @@ Object.keys(Settings).forEach(k => {
 UpdateURI = () => {
   const params = {};
   Object.keys(Settings).forEach(k => {
+    if (typeof Settings[k] == 'function') return;
     params[k] = JSON.stringify(Settings[k]);
   });
   const uri = `${location.origin}${location.pathname}?${new URLSearchParams(params).toString()}`;
@@ -61,3 +62,14 @@ Display.add(Settings, 'fade_out', 0, 100).onChange(v => {
   GUI.updateDisplay();
   UpdateURI();
 });
+
+// Update the GUi (force onchange events)
+const updateGUI = (menu) => {
+  for(const folder in menu.__folders) {
+    updateGUI(menu.__folders[folder]);
+  }
+  for(const controller of menu.__controllers) {
+    controller.setValue(controller.getValue());
+  }
+}
+updateGUI(GUI);

@@ -29,6 +29,7 @@ Object.keys(Settings).forEach(k => {
 UpdateURI = () => {
   const params = {};
   Object.keys(Settings).forEach(k => {
+    if (typeof Settings[k] == 'function') return;
     params[k] = JSON.stringify(Settings[k]);
   });
   const uri = `${location.origin}${location.pathname}?${new URLSearchParams(params).toString()}`;
