@@ -2,18 +2,19 @@
 const Settings = {
   // Movement
   render_time: 25,
-  velocity_x: -1,
-  velocity_y: -2,
+  velocity: { x: 0, y: -2 },
   gravity: -0.01,
   // Display
+  area: 'top top right bottom bottom left',
   text: '❤❤xo',
-  color: [244, 0, 147],
-  size: 30,
-  size_variance: 15,
+  text_color: { r: 244, g: 0, b: 147 },
+  size: { min: 30, max: 45 },
   amount: 300,
   max_age: 2500,
-  fade_in: 20,
-  fade_out: 80,
+  fade: { min: 20, max: 80 },
+  // Performance
+  render_time_ms: 0,
+  url_address: '',
 };
 
 // To get our user specified values
@@ -33,47 +34,80 @@ const UpdateURI = () => {
     params[k] = JSON.stringify(Settings[k]);
   });
   const uri = `${location.origin}${location.pathname}?${new URLSearchParams(params).toString()}`;
-  history.replaceState({}, undefined, uri);
+  // history.replaceState({}, undefined, uri);
+  Settings.url_address = uri;
 };
 
 // Creating a GUI with our settings
-const GUI = new dat.GUI({name: 'Particles controls'});
+const Pane = new Tweakpane.Pane({
+  title: 'Settings',
+  expanded: true,
+});
+Pane.registerPlugin(TweakpaneEssentialsPlugin);
 
-const Movement = GUI.addFolder('Movement');
-Movement.add(Settings, 'render_time', 1, 50).onChange(UpdateURI);
-Movement.add(Settings, 'velocity_x', -10, 10, 0.01).onChange(UpdateURI);
-Movement.add(Settings, 'velocity_y', -10, 10, 0.01).onChange(UpdateURI);
-Movement.add(Settings, 'gravity', -1, 1, 0.01).onChange(UpdateURI);
-
-const Display = GUI.addFolder('Display');
-Display.add(Settings, 'text').onChange(UpdateURI);
-Display.addColor(Settings, 'color').onChange(UpdateURI);
-Display.add(Settings, 'size', 5, 100).onChange(UpdateURI);
-Display.add(Settings, 'size_variance', 0, 50).onChange(UpdateURI);
-Display.add(Settings, 'amount', 1, 1000).onChange(UpdateURI);
-Display.add(Settings, 'max_age', 500, 10000).onChange(UpdateURI);
-Display.add(Settings, 'fade_in', 0, 100).onChange(v => {
-  if (v > Settings.fade_out) Settings.fade_out = v;
-  GUI.updateDisplay();
+Pane.on('change', (ev) => {
   UpdateURI();
 });
-Display.add(Settings, 'fade_out', 0, 100).onChange(v => {
-  if (v < Settings.fade_in) Settings.fade_in = v;
-  GUI.updateDisplay();
-  UpdateURI();
+const Movement = Pane.addFolder({
+  title: 'Movement',
+  expanded: true,
+});
+Movement.addInput(Settings, 'render_time', {min: 10, max: 100, step: 1});
+Movement.addInput(Settings, 'velocity', {
+  x: { min: -5, max: 5, step: 0.01 },
+  y: { min: -5, max: 5, step: 0.01 },
+});
+Movement.addInput(Settings, 'gravity', {min: -1, max: 1, step: 0.01});
+
+const Display = Pane.addFolder({
+  title: 'Display',
+  expanded: true,
+});
+Display.addInput(Settings, 'area', {
+  options: {
+    All: 'all',
+    Edges: 'top top right bottom bottom left',
+    Top: 'top',
+    Right: 'right',
+    Bottom: 'bottom',
+    Left: 'left',
+  },
+});
+Display.addInput(Settings, 'text');
+Display.addInput(Settings, 'text_color');
+Display.addInput(Settings, 'size', { min: 1, max: 100, step: 1 });
+Display.addInput(Settings, 'amount', { min: 1, max: 1000, step: 1 });
+Display.addInput(Settings, 'max_age', { min: 500, max: 10000, step: 50 });
+Display.addInput(Settings, 'fade', { min: 0, max: 100, step: 1 });
+
+const Performance = Pane.addFolder({
+  title: 'Performance',
+  expanded: true,
+});
+Performance.addMonitor(Settings, 'render_time_ms', {
+  view: 'graph',
+  interval: 200,
+  min: 0,
+  max: 100,
 });
 
-// Update the GUi (force onchange events)
-const updateGUI = (menu) => {
-  menu.open();
-  for(const folder in menu.__folders) {
-    updateGUI(menu.__folders[folder]);
-  }
-  for(const controller of menu.__controllers) {
-    controller.setValue(controller.getValue());
-  }
-};
-updateGUI(GUI);
+const Output = Pane.addFolder({
+  title: 'Output',
+  expanded: true,
+});
+const uriComponent = Output.addMonitor(Settings, 'url_address', {
+  interval: 1000,
+});
+const copyButton = Output.addButton({title: 'Copy URL'});
+copyButton.on('click', (ev) => {
+  const input = uriComponent.controller_.view.valueElement.querySelector('input');
+  input.select();
+  input.setSelectionRange(0, 99999); /* For mobile devices */
+  navigator.clipboard.writeText(input.value);
+  ev.target.title = 'Copied!';
+  setTimeout(() => ev.target.title = 'Copy URL', 1500);
+});
+UpdateURI();
 
 
 // Adding the particles
@@ -91,8 +125,8 @@ window.onload = () => {
   let particleIndex = 0;
 
   // Set up a function to create multiple particles
-  function Particle(side = 'top') {
-    this.text = Settings.text.split('')[Math.floor(Math.random() * Settings.text.length)];
+  function Particle(side = 'all') {
+    this.text = [...Settings.text][Math.floor(Math.random() * [...Settings.text].length)];
 
     let x = 0;
     let y = 0;
@@ -105,17 +139,20 @@ window.onload = () => {
       case 'right':
         y = Math.random() * canvas.height;
         break;
+      default:
+        x = Math.random() * canvas.width;
+        y = Math.random() * canvas.height;
     }
 
     switch (side) {
       case 'top':
-        y = Settings.size + (Math.random() * Settings.size);
+        y = Settings.size.min + (Math.random() * Settings.size.min);
         break;
       case 'bottom':
         y = canvas.height - (Math.random() * 10);
         break;
       case 'left':
-        x = Settings.size + (Math.random() * Settings.size);
+        x = Settings.size.min + (Math.random() * Settings.size.min);
         break;
       case 'right':
         x = canvas.width - (Math.random() * 50);
@@ -126,14 +163,14 @@ window.onload = () => {
     this.x = x;
     this.y = y;
 
-    this.vx = Settings.velocity_x * Settings.render_time / 100;
-    this.vy = Settings.velocity_y * Settings.render_time / 100;
+    this.vx = Settings.velocity.x * Settings.render_time / 100;
+    this.vy = Settings.velocity.y * Settings.render_time / 100;
 
-    this.size = Settings.size + (Math.random() - 0.5) * (Settings.size_variance * 2);
+    this.size = Settings.size.min + (Math.random() * (Settings.size.max - Settings.size.min));
     this.opacity = 0;
-    this.fade_in = (Settings.max_age/100) * Settings.fade_in;
+    this.fade_in = (Settings.max_age/100) * Settings.fade.min;
     this.fade_in_amount = 1 / (this.fade_in / Settings.render_time);
-    this.fade_out = (Settings.max_age/100) * Settings.fade_out;
+    this.fade_out = (Settings.max_age/100) * Settings.fade.max;
     this.fade_out_amount = 1 / ((Settings.max_age - this.fade_out) / Settings.render_time);
 
     this.id = particleIndex;
@@ -178,11 +215,11 @@ window.onload = () => {
     // context.closePath();
     // context.fill();
     context.font = `${this.size}px Arial`;
-    context.fillStyle = `rgba(${Settings.color[0]}, ${Settings.color[1]}, ${Settings.color[2]}, ${this.age <= this.fade_in ? this.opacity += this.fade_in_amount : this.age >= this.fade_out ? this.opacity -= this.fade_out_amount : this.opacity})`;
+    context.fillStyle = `rgba(${Settings.text_color.r}, ${Settings.text_color.g}, ${Settings.text_color.b}, ${this.age <= this.fade_in ? this.opacity += this.fade_in_amount : this.age >= this.fade_out ? this.opacity -= this.fade_out_amount : this.opacity})`;
     context.textAlign = 'center';
     context.fillText(this.text, this.x, this.y);
   };
-
+  let prevTime = Date.now();
   const drawCanvas = () => {
     // Fill the backgorund
     // context.fillStyle = "rgba(20,20,20,0.8)";
@@ -192,17 +229,17 @@ window.onload = () => {
 
     // Draw the particles
     while (Object.values(particles).length < Settings.amount) {
-      new Particle('top');
-      new Particle('top');
-      new Particle('right');
-      new Particle('bottom');
-      new Particle('bottom');
-      new Particle('left');
+      for (const area of Settings.area.split(' ')) {
+        new Particle(area);
+      }
     }
 
     for (const i in particles) {
       particles[i].draw();
     }
+    const now = Date.now();
+    Settings.render_time_ms = now - prevTime;
+    prevTime = now;
     setTimeout(drawCanvas, Settings.render_time);
   };
   drawCanvas();

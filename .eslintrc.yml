@@ -8,6 +8,8 @@ env:
 
 globals:
     dat: 'readonly'
+    Tweakpane: 'readonly'
+    TweakpaneEssentialsPlugin: 'readonly'
 
 extends:
   - 'eslint:recommended'

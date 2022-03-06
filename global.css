@@ -17,3 +17,11 @@ div.dg.ac {
 body:hover div.dg.ac {
   top: 0;
 }
+div.tp-dfwv {
+  right: 8px;
+  top: -100%;
+  transition: top 300ms ease-in-out;
+}
+body:hover div.tp-dfwv {
+  top: 8px;
+}
