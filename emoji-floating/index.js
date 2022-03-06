@@ -188,43 +188,38 @@ window.onload = () => {
     // Calculate our text displayed
     this.text = [...Settings.text][Math.floor(Math.random() * [...Settings.text].length)];
 
-    let x = 0;
-    let y = 0;
-
+    // calculate starting positions
     // calculate x
     switch (side) {
       case 'left':
-        x = Math.random() * (Settings.eo_left.max - Settings.eo_left.min) + Settings.eo_left.min;
+        this.x = Math.random() * (Settings.eo_left.max - Settings.eo_left.min) + Settings.eo_left.min;
         break;
       case 'right':
-        x = canvas.width - (Math.random() * (Settings.eo_right.max - Settings.eo_right.min) + Settings.eo_right.min);
+        this.x = canvas.width - (Math.random() * (Settings.eo_right.max - Settings.eo_right.min) + Settings.eo_right.min);
         break;
       case 'top':
       case 'bottom':
       default:
-        x = Math.random() * canvas.width;
+        this.x = Math.random() * canvas.width;
         break;
     }
 
     // calculate y
     switch (side) {
       case 'top':
-        y = Math.random() * (Settings.eo_top.max - Settings.eo_top.min) + Settings.eo_top.min;
+        this.y = Math.random() * (Settings.eo_top.max - Settings.eo_top.min) + Settings.eo_top.min;
         break;
       case 'bottom':
-        y = canvas.height - (Math.random() * (Settings.eo_bottom.max - Settings.eo_bottom.min) + Settings.eo_bottom.min);
+        this.y = canvas.height - (Math.random() * (Settings.eo_bottom.max - Settings.eo_bottom.min) + Settings.eo_bottom.min);
         break;
       case 'left':
       case 'right':
       default:
-        y = Math.random() * canvas.height;
+        this.y = Math.random() * canvas.height;
         break;
     }
 
-    // Establish starting positions, velocities, size
-    this.x = x;
-    this.y = y;
-
+    // Establish velocities, gravity, size etc.
     this.vel_x = Settings.velocity.x / Values.mspf;
     this.vel_y = Settings.velocity.y / Values.mspf;
 
