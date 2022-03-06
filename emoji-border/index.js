@@ -131,31 +131,30 @@ window.onload = () => {
     let x = 0;
     let y = 0;
     switch (side) {
+      case 'left':
+        x = (Math.random() * Settings.size.max);
+        break;
+      case 'right':
+        x = canvas.width - (Math.random() * Settings.size.max);
+        break;
       case 'top':
       case 'bottom':
-        x = Math.random() * canvas.width;
-        break;
-      case 'left':
-      case 'right':
-        y = Math.random() * canvas.height;
-        break;
       default:
         x = Math.random() * canvas.width;
-        y = Math.random() * canvas.height;
+        break;
     }
 
     switch (side) {
       case 'top':
-        y = Settings.size.min + (Math.random() * Settings.size.min);
+        y = Settings.size.max + (Math.random() * Settings.size.max);
         break;
       case 'bottom':
-        y = canvas.height - (Math.random() * 10);
+        y = canvas.height + (Math.random() * Settings.size.max);
         break;
       case 'left':
-        x = Settings.size.min + (Math.random() * Settings.size.min);
-        break;
       case 'right':
-        x = canvas.width - (Math.random() * 50);
+      default:
+        y = Math.random() * canvas.height;
         break;
     }
 
