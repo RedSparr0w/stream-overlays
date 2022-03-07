@@ -66,6 +66,21 @@ reloadButton.on('click', () => {
   history.replaceState({}, undefined, Values.url_address);
   window.location.reload(true);
 });
+const fakeButton = Setup.addButton({title: 'Send fake messages'});
+// Send some fake messages
+let msg_id = 0;
+const sendFakeMessage = () => {
+  if (!mock_data) return;
+  const msg = mock_data[msg_id++];
+  msg_id = (msg_id + 1) % mock_data.length;
+  showMessage({ type: 'chat', message: msg.message, data: msg, timeout: Settings.max_age });
+};
+fakeButton.on('click', () => {
+  let messages = 10;
+  while (messages --> 0) {
+    setTimeout(sendFakeMessage, Math.floor(Math.random() * (messages * 1000)));
+  }
+});
 
 // Display settings
 const Display = Pane.addFolder({
@@ -142,17 +157,6 @@ Object.keys(Settings).forEach(k => {
 Pane.importPreset(Settings);
 
 // #endregion Settings
-
-// const updateGUI = (menu) => {
-//   menu.open();
-//   for(const folder in menu.__folders) {
-//     updateGUI(menu.__folders[folder]);
-//   }
-//   for(const controller of menu.__controllers) {
-//     controller.setValue(controller.getValue());
-//   }
-// };
-// updateGUI(GUI);
 
 const chatEle = document.getElementById('chat');
 
