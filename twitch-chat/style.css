@@ -6,6 +6,7 @@
   --username-color: rgb(244, 0, 147);
   --font-size: 18px;
   --chat-width: auto;
+  --message-border-radius: 0px;
 }
 
 body {
@@ -38,6 +39,7 @@ body {
   background-color: var(--background-color);
   padding: 10px;
   overflow-wrap: break-word;
+  border-radius: var(--message-border-radius);
 }
 .chat-line .chat-line-inner .badges img.badge {
   margin-right: 6px;

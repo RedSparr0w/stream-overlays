@@ -1,90 +1,158 @@
 /* global tmi, twemoji */
 
+// #region Settings
+
 // Our default settings
 const Settings = {
   // Setup
   username: 'GamesDoneQuick',
-  'Reload Window': () => window.location.reload(true),
   // Display
   font_size: 18,
   max_age: 3000,
   message_width: 'auto',
-  background_color: [0, 0, 0, 0.8],
-  message_color: [245, 245, 245],
-  username_color: [244, 0, 147],
+  border_radius: 0,
+  background_color: 'rgba(0,0,0,0.8)',
+  message_color: 'rgb(245,245,245)',
+  username_color: 'rgb(244,0,147)',
   force_color: false,
 };
+const DefaultSettings = JSON.parse(JSON.stringify(Settings));
+const Values = {
+  // Output
+  url_address: '',
+};
 
-// Get the root element
+// Create a function for setting a css variable value
 const cssRoot = document.querySelector(':root');
+const setCssVariable = (variable, value) => cssRoot.style.setProperty(variable, value);
 
-// Create a function for setting a variable value
-function setCssVariable(variable, value) {
-  // Set the value of variable --blue to another value (in this case "lightblue")
-  cssRoot.style.setProperty(variable, value);
-}
-
-// To get our user specified values
-const PageParams = new URLSearchParams(window.location.search);
-Object.keys(Settings).forEach(k => {
-  try {
-    const value = PageParams.get(k);
-    if (value != undefined) Settings[k] = JSON.parse(PageParams.get(k));
-  }catch(e){}
-});
-
-// Update the current URI
+// Update the output URI
 const UpdateURI = () => {
   const params = {};
   Object.keys(Settings).forEach(k => {
     if (typeof Settings[k] == 'function') return;
+    if (JSON.stringify(Settings[k]) == JSON.stringify(DefaultSettings[k])) return;
+    if (typeof Settings[k] == 'object') {
+      for (const key in Settings[k]) {
+        params[`${k}.${key}`] = JSON.stringify(Settings[k][key]);
+      }
+      return;
+    }
     params[k] = JSON.stringify(Settings[k]);
   });
   const uri = `${location.origin}${location.pathname}?${new URLSearchParams(params).toString()}`;
-  history.replaceState({}, undefined, uri);
+  Values.url_address = uri;
 };
 
-// Creating a GUI with our settings
-const GUI = new dat.GUI({name: 'Twitch Chat Settings'});
+// Create our settings GUI
+const Pane = new Tweakpane.Pane({
+  title: 'Settings',
+  expanded: true,
+});
 
-const Setup = GUI.addFolder('Setup');
-Setup.add(Settings, 'username').onChange(UpdateURI);
-Setup.add(Settings, 'Reload Window').onChange(UpdateURI);
+Pane.on('change', (ev) => {
+  UpdateURI();
+});
 
-const Display = GUI.addFolder('Display');
-Display.add(Settings, 'font_size', 5, 40).onChange((v) => {
-  setCssVariable('--font-size', `${v}px`);
-  UpdateURI();
+// Setup settings
+const Setup = Pane.addFolder({
+  title: 'Setup',
+  expanded: true,
 });
-Display.add(Settings, 'message_width', { Full: 'auto', Fit: 'fit-content' }).onChange((v) => {
-  setCssVariable('--chat-width', v);
-  UpdateURI();
+Setup.addInput(Settings, 'username');
+const reloadButton = Setup.addButton({title: 'Reload'});
+// Copy the output uri text when the button is clicked
+reloadButton.on('click', () => {
+  history.replaceState({}, undefined, Values.url_address);
+  window.location.reload(true);
 });
-Display.add(Settings, 'max_age', 0, 10000).onChange(UpdateURI);
-Display.addColor(Settings, 'background_color').onChange((v) => {
-  setCssVariable('--background-color', `rgba(${v})`);
-  UpdateURI();
-});
-Display.addColor(Settings, 'message_color').onChange((v) => {
-  setCssVariable('--message-color', `rgb(${v})`);
-  UpdateURI();
-});
-Display.addColor(Settings, 'username_color').onChange((v) => {
-  setCssVariable('--username-color', `rgb(${v})`);
-  UpdateURI();
-});
-Display.add(Settings, 'force_color').onChange(UpdateURI);
 
-const updateGUI = (menu) => {
-  menu.open();
-  for(const folder in menu.__folders) {
-    updateGUI(menu.__folders[folder]);
-  }
-  for(const controller of menu.__controllers) {
-    controller.setValue(controller.getValue());
-  }
-};
-updateGUI(GUI);
+// Display settings
+const Display = Pane.addFolder({
+  title: 'Display',
+  expanded: true,
+});
+Display.addInput(Settings, 'font_size', { min: 5, max: 40, step: 1 }).on('change', (ev) => {
+  setCssVariable('--font-size', `${ev.value}px`);
+});
+Display.addInput(Settings, 'message_width', { options: { Full: 'auto', Fit: 'fit-content' }}).on('change', (ev) => {
+  setCssVariable('--chat-width', ev.value);
+});
+Display.addInput(Settings, 'border_radius', { min: 0, max: 50, step: 1 }).on('change', (ev) => {
+  setCssVariable('--message-border-radius', `${ev.value}px`);
+});
+Display.addInput(Settings, 'max_age', { min: 0, max: 10000, step: 1 });
+Display.addInput(Settings, 'background_color').on('change', (ev) => {
+  setCssVariable('--background-color', ev.value);
+});
+Display.addInput(Settings, 'message_color').on('change', (ev) => {
+  setCssVariable('--message-color', ev.value);
+});
+Display.addInput(Settings, 'username_color').on('change', (ev) => {
+  setCssVariable('--username-color', ev.value);
+});
+Display.addInput(Settings, 'force_color');
+
+// Output settings
+const Output = Pane.addFolder({
+  title: 'Output',
+  expanded: true,
+});
+const uriComponent = Output.addMonitor(Values, 'url_address', {
+  interval: 1000,
+});
+const copyButton = Output.addButton({title: 'Copy URL'});
+// Copy the output uri text when the button is clicked
+copyButton.on('click', (ev) => {
+  const input = uriComponent.controller_.view.valueElement.querySelector('input');
+  input.select();
+  input.setSelectionRange(0, 99999); /* For mobile devices */
+  navigator.clipboard.writeText(input.value);
+  ev.target.title = 'Copied!';
+  setTimeout(() => ev.target.title = 'Copy URL', 1500);
+});
+
+// Update our uri string now
+UpdateURI();
+
+
+// Get our user specified values
+const PageParams = new URLSearchParams(window.location.search);
+Object.keys(Settings).forEach(k => {
+  try {
+    if (typeof Settings[k] == 'object') {
+      for (const key in Settings[k]) {
+        const value = PageParams.get(`${k}.${key}`);
+        // If it doesn't exist, continue
+        if (value == undefined) return;
+        // Update our value
+        Settings[k][key] = JSON.parse(value);
+      }
+      return;
+    }
+    // Get our value
+    const value = PageParams.get(k);
+    // If it doesn't exist, continue
+    if (value == undefined) return;
+    // Update our value
+    Settings[k] = JSON.parse(PageParams.get(k));
+  }catch(e){}
+});
+// Update the panel/trigger onchange events
+Pane.importPreset(Settings);
+
+// #endregion Settings
+
+// const updateGUI = (menu) => {
+//   menu.open();
+//   for(const folder in menu.__folders) {
+//     updateGUI(menu.__folders[folder]);
+//   }
+//   for(const controller of menu.__controllers) {
+//     controller.setValue(controller.getValue());
+//   }
+// };
+// updateGUI(GUI);
 
 const chatEle = document.getElementById('chat');
 
@@ -359,7 +427,7 @@ function showMessage({
   // Make sure the element is on the page first
   setTimeout(() => chatLine_.classList.add('visible'), 100);
 
-  if (chatEle.childElementCount > 30) {
+  if (chatEle.childElementCount > 45) {
     chatEle.removeChild(chatEle.children[0]);
   }
 
@@ -368,8 +436,13 @@ function showMessage({
       if (chatLine_.parentElement) {
         // Hide the element
         chatLine_.classList.remove('visible');
-        // remove the element after 1 second (once hidden)
-        setTimeout(() => chatEle.removeChild(chatLine_), 1000);
+        // remove the element after 1 second (once hidden) (may fail due to being removed by something else)
+        setTimeout(() => {
+          try {
+            chatEle.removeChild(chatLine_);
+          } catch(e) {}
+        }, 1000);
+        
       }
     }, timeout);
   }
