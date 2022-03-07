@@ -3,7 +3,6 @@
 // Our default settings
 const Settings = {
   // Movement
-  fps: 30,
   velocity: { x: 0, y: -10 },
   gravity: { x: 0, y: -0.01 },
   // Display
@@ -19,12 +18,12 @@ const Settings = {
   amount: 300,
   max_age: 2500,
   fade: { min: 20, max: 80 },
+  // Performance
+  fps: 30,
 };
 const DefaultSettings = JSON.parse(JSON.stringify(Settings));
 const Values = {
   mspf: Math.floor(1000 / Settings.fps),
-  // Performance
-  ms_per_frame: 0,
   // Output
   url_address: '',
 };
@@ -86,10 +85,6 @@ const Movement = Pane.addFolder({
   title: 'Movement',
   expanded: true,
 });
-const FPS = Movement.addInput(Settings, 'fps', { min: 10, max: 144, step: 1 });
-FPS.on('change', (ev) => {
-  Values.mspf = Math.floor(1000 / ev.value);
-});
 Movement.addInput(Settings, 'velocity', {
   x: { min: -100, max: 100, step: 0.1 },
   y: { min: -100, max: 100, step: 0.1 },
@@ -138,11 +133,14 @@ const Performance = Pane.addFolder({
   title: 'Performance',
   expanded: true,
 });
-Performance.addMonitor(Values, 'ms_per_frame', {
-  view: 'graph',
-  interval: 200,
-  min: 0,
-  max: 100,
+const FPS = Performance.addInput(Settings, 'fps', { min: 10, max: 144, step: 1 });
+FPS.on('change', (ev) => {
+  Values.mspf = Math.floor(1000 / ev.value);
+});
+const fpsGraph = Performance.addBlade({
+  view: 'fpsgraph',
+  label: 'current',
+  lineCount: 3,
 });
 
 // Output settings
@@ -273,11 +271,14 @@ window.onload = () => {
   // the last frame time
   let lastFrameTime = 0;
   function update(time){
+    fpsGraph.begin();
     //skip the frame if the call is too early
     if(time - lastFrameTime < Values.mspf - 1){
       return requestAnimationFrame(update);
     }
-
+    // Update last frame time
+    lastFrameTime = time;
+  
     // Set a transparent background
     context.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -293,10 +294,7 @@ window.onload = () => {
       particles[i].draw();
     }
 
-    // calculate how long it took between frames
-    Values.ms_per_frame = time - lastFrameTime;
-    lastFrameTime = time;
-
+    fpsGraph.end();
     // get next frame
     requestAnimationFrame(update);
   }
