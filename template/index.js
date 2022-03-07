@@ -14,29 +14,6 @@ const Values = {
   url_address: '',
 };
 
-// Get our user specified values
-const PageParams = new URLSearchParams(window.location.search);
-Object.keys(Settings).forEach(k => {
-  try {
-    if (typeof Settings[k] == 'object') {
-      for (const key in Settings[k]) {
-        const value = PageParams.get(`${k}.${key}`);
-        // If it doesn't exist, continue
-        if (value == undefined) return;
-        // Update our value
-        Settings[k][key] = JSON.parse(value);
-      }
-      return;
-    }
-    // Get our value
-    const value = PageParams.get(k);
-    // If it doesn't exist, continue
-    if (value == undefined) return;
-    // Update our value
-    Settings[k] = JSON.parse(PageParams.get(k));
-  }catch(e){}
-});
-
 // Update the output URI
 const UpdateURI = () => {
   const params = {};
@@ -109,6 +86,31 @@ copyButton.on('click', (ev) => {
 
 // Update our uri string now
 UpdateURI();
+
+// Get our user specified values
+const PageParams = new URLSearchParams(window.location.search);
+Object.keys(Settings).forEach(k => {
+  try {
+    if (typeof Settings[k] == 'object') {
+      for (const key in Settings[k]) {
+        const value = PageParams.get(`${k}.${key}`);
+        // If it doesn't exist, continue
+        if (value == undefined) return;
+        // Update our value
+        Settings[k][key] = JSON.parse(value);
+      }
+      return;
+    }
+    // Get our value
+    const value = PageParams.get(k);
+    // If it doesn't exist, continue
+    if (value == undefined) return;
+    // Update our value
+    Settings[k] = JSON.parse(PageParams.get(k));
+  }catch(e){}
+});
+// Update the panel/trigger onchange events
+Pane.importPreset(Settings);
 
 // #endregion Settings
 
