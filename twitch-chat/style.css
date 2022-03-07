@@ -1,17 +1,24 @@
 @import url("https://fonts.googleapis.com/css?family=Ropa+Sans");
 
 :root {
-  --background-color: rgba(0, 0, 0, 0.8);
-  --message-color: rgb(245, 245, 245);
-  --username-color: rgb(244, 0, 147);
+  --opacity: .95;
   --font-size: 18px;
   --chat-width: auto;
   --message-border-radius: 0px;
+  /* Default message options */
+  --background-custom: none;
+  --background-color: rgb(0, 0, 0);
+  --message-color: rgb(245, 245, 245);
+  --username-color: rgb(180, 157, 210);
+  /* Highlighted message options */
+  --highlighted-background-custom: none;
+  --highlighted-background-color: rgb(100, 65, 165);
+  --highlighted-message-color: rgb(245, 245, 245);
+  --highlighted-username-color: rgb(0, 0, 0);
 }
 
 body {
   background: transparent;
-  color: var(--message-color);
   font-family: "Ropa Sans", sans-serif;
   font-size: var(--font-size);
   overflow: hidden;
@@ -24,71 +31,105 @@ body {
   width: calc(100% - 20px);
 }
 
+/* The container */
 .chat-line {
-  overflow: hidden;
-  max-height: 0px;
-  transition: opacity 2s, max-height 1s, margin-top 1s;
-  width: var(--chat-width);
-}
-.chat-line.visible {
+  position: relative;
+  opacity: var(--opacity);
   margin-top: 5px;
-  max-height: 300px;
-  transition: opacity 2s, max-height 1s, margin-top 300ms;
-}
-.chat-line .chat-line-inner {
+  max-height: 0px;
+  transition: all 1s;
+  width: var(--chat-width);
+  color: var(--message-color);
+  background: var(--background-custom);
   background-color: var(--background-color);
-  padding: 10px;
-  overflow-wrap: break-word;
   border-radius: var(--message-border-radius);
 }
+.chat-line.visible {
+  max-height: 100vh;
+  transition: opacity 1s, max-height 0.5s, margin-top 300ms;
+}
+/* Inner container */
+.chat-line .chat-line-inner {
+  padding: 10px;
+  overflow-wrap: break-word;
+}
+/* Username */
+.user-name {
+  color: var(--username-color);
+  font-weight: bold;
+}
+
+/* Highlighted messages */
+.chat-line.highlighted {
+  color: var(--highlighted-message-color);
+  background: var(--highlighted-background-custom);
+  background-color: var(--highlighted-background-color);
+}
+.chat-line.highlighted .user-name {
+  color: var(--highlighted-username-color);
+}
+
+/* Badge */
 .chat-line .chat-line-inner .badges img.badge {
   margin-right: 6px;
   vertical-align: text-bottom;
   width: var(--font-size);
   height: var(--font-size);
 }
-.chat-line .chat-line-inner.admin .message {
-  opacity: 0.4;
+
+/* Emotes */
+.chat-line .chat-line-inner img {
+  width: var(--font-size);
+  vertical-align: text-bottom;
 }
 
-/* Highlighted messages */
-.chat-line.visible.highlighted {
-  position: relative;
-  overflow: visible;
-  margin: 10px 0px;
-}
-.chat-line.visible.highlighted::after {
-  position: absolute;
-  content: "";
-  bottom: -4px;
-  left: -4px;
-  right: 0;
-  z-index: -1;
-  height: calc(100% + 8px);
-  width: calc(100% + 8px);
-  transform: translateZ(0);
-  filter: blur(3px);
-  background: linear-gradient(to left, rgba(0, 255, 255, 0.75), rgba(196, 45, 168, 0.75), rgba(101, 1, 222, 0.75), rgba(196, 45, 168, 0.75), rgba(0, 255, 255, 0.75));
-  background-size: 200% 200%;
-  -webkit-animation: animateGlow 1.25s linear infinite;
-  animation: animateGlow 1.25s linear infinite;
-}
-
-@keyframes animateGlow {
+@keyframes animateSlideBackgroundLeft {
   0% {
-    background-position: 0vw 50%;
+    background-position: 0% 50%;
   }
   100% {
     background-position: 200% 50%;
   }
 }
 
-
-.user-name {
-  color: var(--username-color);
+/* #region Bubble style */
+.bubble .chat-line {
+  margin-top: 5px;
+  margin-bottom: 5px;
+  background: transparent;
 }
-
-.message img {
-  width: var(--font-size);
-  vertical-align: text-bottom;
+.bubble .chat-line .chat-line-inner {
+  padding-top: 10px;
+  overflow-wrap: break-word;
 }
+.bubble .user-name {
+  white-space: nowrap;
+  position: absolute;
+  font-weight: bold;
+  color: var(--background-color);
+  background: var(--username-color);
+  padding: 5px 15px;
+  border-radius: 15px;
+  text-transform: uppercase;
+  z-index: 2;
+  top: 3px;
+  left: 0px;
+}
+.bubble .message {
+  position: relative;
+  display: inline-block;
+  background: var(--background-color);
+  margin: -20px 0px;
+  padding: 25px 15px 15px 15px;
+  width: calc(100% - 30px);
+  border-radius: var(--message-border-radius);;
+  z-index: 1;
+}
+.bubble .chat-line.highlighted .message {
+  background: var(--highlighted-background-color);
+}
+.bubble .chat-line.highlighted .user-name {
+  color: var(--highlighted-background-color);
+  background: var(--highlighted-username-color);
+}
+/* #endregion Bubble style */

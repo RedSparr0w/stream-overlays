@@ -11,10 +11,20 @@ const Settings = {
   max_age: 3000,
   message_width: 'auto',
   border_radius: 0,
-  background_color: 'rgba(0,0,0,0.8)',
-  message_color: 'rgb(245,245,245)',
-  username_color: 'rgb(244,0,147)',
-  force_color: false,
+  opacity: 95,
+  style: 'default',
+  m: {
+    bg: 'rgb(0,0,0)',
+    msg: 'rgb(245,245,245)',
+    name: 'rgb(196,165,252)',
+    force: false,
+  },
+  h: {
+    bg: 'rgb(100,65,165)',
+    msg: 'rgb(245,245,245)',
+    name: 'rgb(0,0,0)',
+    force: true,
+  },
 };
 const DefaultSettings = JSON.parse(JSON.stringify(Settings));
 const Values = {
@@ -87,26 +97,59 @@ const Display = Pane.addFolder({
   title: 'Display',
   expanded: true,
 });
+Display.addInput(Settings, 'max_age', { min: 0, max: 10000, step: 1 });
 Display.addInput(Settings, 'font_size', { min: 5, max: 40, step: 1 }).on('change', (ev) => {
   setCssVariable('--font-size', `${ev.value}px`);
-});
-Display.addInput(Settings, 'message_width', { options: { Full: 'auto', Fit: 'fit-content' }}).on('change', (ev) => {
-  setCssVariable('--chat-width', ev.value);
 });
 Display.addInput(Settings, 'border_radius', { min: 0, max: 50, step: 1 }).on('change', (ev) => {
   setCssVariable('--message-border-radius', `${ev.value}px`);
 });
-Display.addInput(Settings, 'max_age', { min: 0, max: 10000, step: 1 });
-Display.addInput(Settings, 'background_color').on('change', (ev) => {
+Display.addInput(Settings, 'opacity', { min: 0, max: 100, step: 1 }).on('change', (ev) => {
+  setCssVariable('--opacity', ev.value / 100);
+});
+Display.addInput(Settings, 'message_width', { options: { Full: 'auto', Fit: 'fit-content' }}).on('change', (ev) => {
+  setCssVariable('--chat-width', ev.value);
+});
+const Style = Display.addInput(Settings, 'style', {
+  options: {
+    Default: 'default',
+    Bubble: 'bubble',
+  },
+});
+const CustomM = Display.addFolder({
+  title: 'Message Style',
+  expanded: true,
+});
+CustomM.addInput(Settings.m, 'bg').on('change', (ev) => {
   setCssVariable('--background-color', ev.value);
 });
-Display.addInput(Settings, 'message_color').on('change', (ev) => {
+CustomM.addInput(Settings.m, 'msg').on('change', (ev) => {
   setCssVariable('--message-color', ev.value);
 });
-Display.addInput(Settings, 'username_color').on('change', (ev) => {
+CustomM.addInput(Settings.m, 'name').on('change', (ev) => {
   setCssVariable('--username-color', ev.value);
 });
-Display.addInput(Settings, 'force_color');
+CustomM.addInput(Settings.m, 'force');
+
+const CustomHM = Display.addFolder({
+  title: 'Highlighted Message Style',
+  expanded: true,
+});
+CustomHM.addInput(Settings.h, 'bg').on('change', (ev) => {
+  setCssVariable('--highlighted-background-color', ev.value);
+});
+CustomHM.addInput(Settings.h, 'msg').on('change', (ev) => {
+  setCssVariable('--highlighted-message-color', ev.value);
+});
+CustomHM.addInput(Settings.h, 'name').on('change', (ev) => {
+  setCssVariable('--highlighted-username-color', ev.value);
+});
+CustomHM.addInput(Settings.h, 'force');
+
+// Update our themes
+Style.on('change', (ev) => {
+  document.body.className = ev.value;
+});
 
 // Output settings
 const Output = Pane.addFolder({
@@ -361,7 +404,8 @@ function showMessage({
   });
 
   // Check if message should be highlighted
-  if (data['msg-id'] && data['msg-id'].includes('highlighted')) {
+  const highlighted = data['msg-id'] && data['msg-id'].includes('highlighted');
+  if (highlighted) {
     chatLine_.classList.add('highlighted');
   }
 
@@ -398,7 +442,9 @@ function showMessage({
 
     const nameEle = document.createElement('span');
     nameEle.classList.add('user-name');
-    nameEle.style = Settings.force_color ? '' : `color: ${data.color}`;
+    nameEle.style = highlighted ?
+      Settings.h.force ? '' : `color: ${data.color}` :
+      Settings.m.force ? '' : `color: ${data.color}`;
     nameEle.innerText = data.name;
 
     const colonEle = document.createElement('span');
@@ -411,7 +457,7 @@ function showMessage({
     const finalMessage = handleEmotes(chan, data.emotes || {}, message);
     addEmoteDOM(messageEle, finalMessage);
 
-    chatLine.appendChild(badgeEle);
+    nameEle.prepend(badgeEle);
     chatLine.appendChild(spaceEle);
     chatLine.appendChild(nameEle);
     chatLine.appendChild(colonEle);
