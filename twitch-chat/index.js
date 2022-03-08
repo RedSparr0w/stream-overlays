@@ -1,4 +1,4 @@
-/* global tmi, twemoji */
+/* global tmi, twemoji, mock_data */
 
 // #region Settings
 
