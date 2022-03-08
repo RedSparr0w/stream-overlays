@@ -302,12 +302,23 @@ window.onload = () => {
     }
 
     fpsGraph.end();
-    // get next frame
     // Update last frame time
     lastFrameTime = time;
+    // start next frame
     requestAnimationFrame(update);
   }
-  requestAnimationFrame(update); // start animation
+  // start animation
+  requestAnimationFrame(update);
+
+  // Update the canvas size when window resized
+  let rt;
+  window.onresize = () => {
+    clearTimeout(rt);
+    rt = setTimeout(() => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }, 50);
+  };
 };
 
 // #endregion Adding the particles
