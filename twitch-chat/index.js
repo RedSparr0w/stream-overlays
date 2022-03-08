@@ -110,7 +110,7 @@ Display.addInput(Settings, 'opacity', { min: 0, max: 100, step: 1 }).on('change'
 Display.addInput(Settings, 'message_width', { options: { Full: 'auto', Fit: 'fit-content' }}).on('change', (ev) => {
   setCssVariable('--chat-width', ev.value);
 });
-const Style = Display.addInput(Settings, 'style', {
+Display.addInput(Settings, 'style', {
   options: {
     Default: 'default',
     Bubble: 'bubble',
@@ -145,11 +145,6 @@ CustomHM.addInput(Settings.h, 'name').on('change', (ev) => {
   setCssVariable('--highlighted-username-color', ev.value);
 });
 CustomHM.addInput(Settings.h, 'force');
-
-// Update our themes
-Style.on('change', (ev) => {
-  document.body.className = ev.value;
-});
 
 // Output settings
 const Output = Pane.addFolder({
@@ -389,37 +384,33 @@ function showMessage({
   timeout = 3000,
   attribs = {},
 } = {}) {
-  const chatLine_ = document.createElement('div');
-  const chatLine = document.createElement('div');
-  chatLine_.classList.add('chat-line');
-  chatLine.classList.add('chat-line-inner');
-  chatLine_.appendChild(chatLine);
+  const template = document.querySelector(`template[style-${Settings.style}]`);
+  const chat = template.content.cloneNode(true);
+  chat.firstElementChild.setAttribute(`style-${Settings.style}`, true);
+  const chatLine = chat.querySelector('.chat-line');
+  const chatLineInner = chat.querySelector('.chat-line-inner');
+  const badgeEle = chat.querySelector('.badges');
+  const nameEle = chat.querySelector('.username');
+  const messageEle = chat.querySelector('.message');
 
   if (chan) {
-    chatLine_.setAttribute('channel', chan);
+    chatLine.setAttribute('channel', chan);
   }
 
   Object.keys(attribs).forEach((key) => {
-    chatLine_.setAttribute(key, attribs[key]);
+    chatLine.setAttribute(key, attribs[key]);
   });
 
   // Check if message should be highlighted
   const highlighted = data['msg-id'] && data['msg-id'].includes('highlighted');
-  if (highlighted) {
-    chatLine_.classList.add('highlighted');
-  }
+  if (highlighted) chatLine.classList.add('highlighted');
+  if ('id' in data) chatLine.setAttribute('message-id', data.id);
+  if ('user-id' in data) chatLine.setAttribute('user-id', data['user-id']);
+  if ('room-id' in data) chatLine.setAttribute('channel-id', data['room-id']);
+  if ('username' in data) chatLine.setAttribute('username', data.username);
 
   if (type === 'chat') {
-    'id' in data && chatLine_.setAttribute('message-id', data.id);
-    'user-id' in data && chatLine_.setAttribute('user-id', data['user-id']);
-    'room-id' in data && chatLine_.setAttribute('channel-id', data['room-id']);
-    'username' in data && chatLine_.setAttribute('username', data.username);
-
-    const spaceEle = document.createElement('span');
-    spaceEle.innerText = ' ';
-    const badgeEle = document.createElement('span');
     if ('badges' in data && data.badges !== null) {
-      badgeEle.classList.add('badges');
       const badgeGroup = Object.assign(
         {},
         twitchBadgeCache.data.global,
@@ -440,42 +431,26 @@ function showMessage({
       });
     }
 
-    const nameEle = document.createElement('span');
-    nameEle.classList.add('user-name');
     nameEle.style = highlighted ?
       Settings.h.force ? '' : `color: ${data.color}` :
       Settings.m.force ? '' : `color: ${data.color}`;
     nameEle.innerText = data.name;
 
-    const colonEle = document.createElement('span');
-    colonEle.classList.add('message-colon');
-    colonEle.innerText = ': ';
-
-    const messageEle = document.createElement('span');
-    messageEle.classList.add('message');
-
+    // Get any emotes from the message
     const finalMessage = handleEmotes(chan, data.emotes || {}, message);
     addEmoteDOM(messageEle, finalMessage);
-
-    nameEle.prepend(badgeEle);
-    chatLine.appendChild(spaceEle);
-    chatLine.appendChild(nameEle);
-    chatLine.appendChild(colonEle);
-    chatLine.appendChild(messageEle);
   } else if (type === 'admin') {
-    chatLine_.classList.add('admin');
+    chatLine.classList.add('admin');
 
-    const messageEle = document.createElement('span');
-    messageEle.classList.add('message');
     messageEle.innerText = message;
 
-    chatLine.appendChild(messageEle);
+    chatLineInner.appendChild(messageEle);
   }
 
-  chatEle.appendChild(chatLine_);
+  chatEle.appendChild(chatLine);
 
   // Make sure the element is on the page first
-  setTimeout(() => chatLine_.classList.add('visible'), 100);
+  setTimeout(() => chatLine.classList.add('visible'), 100);
 
   if (chatEle.childElementCount > 45) {
     chatEle.removeChild(chatEle.children[0]);
@@ -483,13 +458,13 @@ function showMessage({
 
   if (timeout) {
     setTimeout(() => {
-      if (chatLine_.parentElement) {
+      if (chatLine.parentElement) {
         // Hide the element
-        chatLine_.classList.remove('visible');
+        chatLine.classList.remove('visible');
         // remove the element after 1 second (once hidden) (may fail due to being removed by something else)
         setTimeout(() => {
           try {
-            chatEle.removeChild(chatLine_);
+            chatEle.removeChild(chatLine);
           } catch(e) {}
         }, 1000);
         
