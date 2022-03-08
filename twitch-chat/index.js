@@ -390,6 +390,7 @@ function showMessage({
   const chatLine = chat.querySelector('.chat-line');
   const chatLineInner = chat.querySelector('.chat-line-inner');
   const badgeEle = chat.querySelector('.badges');
+  const nameContainerEle = chat.querySelector('.name-container');
   const nameEle = chat.querySelector('.username');
   const messageEle = chat.querySelector('.message');
 
@@ -441,8 +442,7 @@ function showMessage({
     addEmoteDOM(messageEle, finalMessage);
   } else if (type === 'admin') {
     chatLine.classList.add('admin');
-    badgeEle.remove();
-    nameEle.remove();
+    nameContainerEle.remove();
 
     messageEle.innerText = message;
 

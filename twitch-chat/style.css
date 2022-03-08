@@ -54,6 +54,9 @@ body {
   overflow-wrap: break-word;
 }
 /* Username */
+.name-container {
+  display: inline-block
+}
 .username {
   color: var(--username-color);
   font-weight: bold;
@@ -112,18 +115,21 @@ body {
   padding-top: 10px;
   overflow-wrap: break-word;
 }
-[style-bubble].chat-line .username {
+[style-bubble].chat-line .name-container {
   white-space: nowrap;
   position: absolute;
-  font-weight: bold;
-  color: var(--background-color);
   background: var(--username-color);
   padding: 5px 15px;
   border-radius: 15px;
-  text-transform: uppercase;
   z-index: 2;
   top: -3px;
   left: 0px;
+}
+[style-bubble].chat-line .username {
+  white-space: nowrap;
+  font-weight: bold;
+  color: var(--background-color);
+  text-transform: uppercase;
 }
 [style-bubble].chat-line .username:after {
   content: '';
