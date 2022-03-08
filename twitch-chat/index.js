@@ -441,6 +441,8 @@ function showMessage({
     addEmoteDOM(messageEle, finalMessage);
   } else if (type === 'admin') {
     chatLine.classList.add('admin');
+    badgeEle.remove();
+    nameEle.remove();
 
     messageEle.innerText = message;
 
