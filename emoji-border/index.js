@@ -4,7 +4,7 @@
 const Settings = {
   // Movement
   velocity: { x: 0, y: -10 },
-  gravity: { x: 0, y: -0.01 },
+  gravity: { x: 0, y: -0.05 },
   // Display
   area: 'top top right bottom bottom left',
   // Edge offsets
@@ -23,7 +23,7 @@ const Settings = {
 };
 const DefaultSettings = JSON.parse(JSON.stringify(Settings));
 const Values = {
-  mspf: Math.floor(1000 / Settings.fps),
+  mspf: Math.floor(1000 / Settings.fps) - 1,
   // Output
   url_address: '',
 };
@@ -90,8 +90,8 @@ Movement.addInput(Settings, 'velocity', {
   y: { min: -100, max: 100, step: 0.1 },
 });
 Movement.addInput(Settings, 'gravity',  {
-  x: { min: -10, max: 10, step: 0.01 },
-  y: { min: -10, max: 10, step: 0.01 },
+  x: { min: -1, max: 1, step: 0.01 },
+  y: { min: -1, max: 1, step: 0.01 },
 });
 
 // Display settings
@@ -135,7 +135,7 @@ const Performance = Pane.addFolder({
 });
 const FPS = Performance.addInput(Settings, 'fps', { min: 10, max: 144, step: 1 });
 FPS.on('change', (ev) => {
-  Values.mspf = Math.floor(1000 / ev.value);
+  Values.mspf = Math.floor(1000 / ev.value) - 1;
 });
 const fpsGraph = Performance.addBlade({
   view: 'fpsgraph',
@@ -218,52 +218,60 @@ window.onload = () => {
     }
 
     // Establish velocities, gravity, size etc.
-    this.vel_x = Settings.velocity.x / Values.mspf;
-    this.vel_y = Settings.velocity.y / Values.mspf;
+    this.vel_x = Settings.velocity.x / 500;
+    this.vel_y = Settings.velocity.y / 500;
 
-    this.grav_x = Settings.gravity.x / Values.mspf;
-    this.grav_y = Settings.gravity.y / Values.mspf;
+    this.grav_x = Settings.gravity.x / 5000;
+    this.grav_y = Settings.gravity.y / 5000;
 
     this.size = Settings.size.min + (Math.random() * (Settings.size.max - Settings.size.min));
     this.opacity = 0;
-    this.fade_in = (Settings.max_age/100) * Settings.fade.min;
-    this.fade_in_amount = 1 / (this.fade_in / Values.mspf);
-    this.fade_out = (Settings.max_age/100) * Settings.fade.max;
-    this.fade_out_amount = 1 / ((Settings.max_age - this.fade_out) / Values.mspf);
+    // Calculate at what time we should be fully faded in
+    this.fade_in_time = Settings.max_age * (Settings.fade.min / 100);
+    this.fade_in_amount = 1 / this.fade_in_time;
+    this.fade_out_time = Settings.max_age * (Settings.fade.max / 100);
+    this.fade_out_amount = 1 / (Settings.max_age - this.fade_out_time);
 
     this.id = particleIndex;
     this.age = 0;
-    this.delay = Math.random() * 1000;
+    this.delay = Math.random() * Settings.max_age;
 
     // Add new particle to the index
     particles[particleIndex++] = this;
   }
 
   // Some prototype methods for the particle's "draw" function
-  Particle.prototype.draw = function() {
+  Particle.prototype.draw = function(delta) {
     if (this.delay > 0) {
-      this.delay -= Values.mspf;
+      this.delay -= delta;
       return;
     }
     // Move the particle
-    this.x += this.vel_x;
-    this.y += this.vel_y;
+    this.x += this.vel_x * delta;
+    this.y += this.vel_y * delta;
 
     // Adjust for gravity
-    this.vel_x += this.grav_x;
-    this.vel_y += this.grav_y;
+    this.vel_x += this.grav_x * delta;
+    this.vel_y += this.grav_y * delta;
 
     // Age the particle
-    this.age += Values.mspf;
+    this.age += delta;
 
     // If Particle is old, delete it so we can get a new one
     if (this.age >= Settings.max_age || (this.y + this.size) < 0) {
       delete particles[this.id];
     }
 
+    // calculate opacity
+    if (this.age <= this.fade_in_time)
+      this.opacity += this.fade_in_amount * delta;
+    else if (this.age >= this.fade_out_time)
+      this.opacity -= this.fade_out_amount * delta;
+    else this.opacity = 1;
+
     // Spawn the particle
     context.font = `${this.size}px Arial`;
-    context.fillStyle = `rgba(${Settings.text_color.r}, ${Settings.text_color.g}, ${Settings.text_color.b}, ${this.age <= this.fade_in ? this.opacity += this.fade_in_amount : this.age >= this.fade_out ? this.opacity -= this.fade_out_amount : this.opacity})`;
+    context.fillStyle = `rgba(${Settings.text_color.r}, ${Settings.text_color.g}, ${Settings.text_color.b}, ${this.opacity})`;
     context.textAlign = 'center';
     context.fillText(this.text, this.x, this.y);
   };
@@ -272,12 +280,11 @@ window.onload = () => {
   let lastFrameTime = 0;
   function update(time){
     fpsGraph.begin();
+    const delta = time - lastFrameTime;
     //skip the frame if the call is too early
-    if(time - lastFrameTime < Values.mspf - 1){
+    if(delta < Values.mspf){
       return requestAnimationFrame(update);
     }
-    // Update last frame time
-    lastFrameTime = time;
   
     // Set a transparent background
     context.clearRect(0, 0, canvas.width, canvas.height);
@@ -291,11 +298,13 @@ window.onload = () => {
 
     // Draw the particles
     for (const i in particles) {
-      particles[i].draw();
+      particles[i].draw(delta);
     }
 
     fpsGraph.end();
     // get next frame
+    // Update last frame time
+    lastFrameTime = time;
     requestAnimationFrame(update);
   }
   requestAnimationFrame(update); // start animation
