@@ -54,9 +54,17 @@ body {
   overflow-wrap: break-word;
 }
 /* Username */
-.user-name {
+.name-container {
+  display: inline-block
+}
+.username {
   color: var(--username-color);
   font-weight: bold;
+}
+.username:after {
+  content: ": ";
+  color: var(--message-color);
+  font-weight: normal;
 }
 
 /* Highlighted messages */
@@ -65,8 +73,13 @@ body {
   background: var(--highlighted-background-custom);
   background-color: var(--highlighted-background-color);
 }
-.chat-line.highlighted .user-name {
+.chat-line.highlighted .username {
   color: var(--highlighted-username-color);
+}
+.chat-line.highlighted .username:after {
+  content: ": ";
+  color: var(--highlighted-message-color);
+  font-weight: normal;
 }
 
 /* Badge */
@@ -93,42 +106,47 @@ body {
 }
 
 /* #region Bubble style */
-.bubble .chat-line {
-  margin-top: 5px;
-  margin-bottom: 5px;
+[style-bubble].chat-line {
+  margin-top: 0px;
+  margin-bottom: 0px;
   background: transparent;
 }
-.bubble .chat-line .chat-line-inner {
+[style-bubble].chat-line .chat-line-inner {
   padding-top: 10px;
   overflow-wrap: break-word;
 }
-.bubble .user-name {
+[style-bubble].chat-line .name-container {
   white-space: nowrap;
   position: absolute;
-  font-weight: bold;
-  color: var(--background-color);
   background: var(--username-color);
   padding: 5px 15px;
   border-radius: 15px;
-  text-transform: uppercase;
   z-index: 2;
-  top: 3px;
+  top: -3px;
   left: 0px;
 }
-.bubble .message {
+[style-bubble].chat-line .username {
+  white-space: nowrap;
+  font-weight: bold;
+  color: var(--background-color);
+  text-transform: uppercase;
+}
+[style-bubble].chat-line .username:after {
+  content: '';
+}
+[style-bubble].chat-line .message {
   position: relative;
   display: inline-block;
   background: var(--background-color);
-  margin: -20px 0px;
-  padding: 25px 15px 15px 15px;
+  padding: 20px 15px 15px 15px;
   width: calc(100% - 30px);
-  border-radius: var(--message-border-radius);;
+  border-radius: 5px;
   z-index: 1;
 }
-.bubble .chat-line.highlighted .message {
+[style-bubble].chat-line.highlighted .message {
   background: var(--highlighted-background-color);
 }
-.bubble .chat-line.highlighted .user-name {
+[style-bubble].chat-line.highlighted .username {
   color: var(--highlighted-background-color);
   background: var(--highlighted-username-color);
 }
