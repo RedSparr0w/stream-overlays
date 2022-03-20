@@ -15,6 +15,8 @@ const Settings = {
   text: '❤❤xo',
   text_color: { r: 244, g: 0, b: 147 },
   size: { min: 30, max: 45 },
+  max_rotation: 15,
+  rotate_speed: 0,
   amount: 300,
   max_age: 2500,
   fade: { min: 20, max: 80 },
@@ -124,6 +126,8 @@ EdgeOffsets.addInput(Settings, 'eo_left', { label: 'Left', min: -200, max: 200, 
 Display.addInput(Settings, 'text');
 Display.addInput(Settings, 'text_color');
 Display.addInput(Settings, 'size', { min: 1, max: 100, step: 1 });
+Display.addInput(Settings, 'max_rotation', { min: 0, max: 180, step: 1 });
+Display.addInput(Settings, 'rotate_speed', { min: 0, max: 2, step: 0.01 });
 Display.addInput(Settings, 'amount', { min: 1, max: 1000, step: 1 });
 Display.addInput(Settings, 'max_age', { min: 500, max: 10000, step: 50 });
 Display.addInput(Settings, 'fade', { min: 0, max: 100, step: 1 });
@@ -236,6 +240,9 @@ window.onload = () => {
     this.age = 0;
     this.delay = Math.random() * Settings.max_age;
 
+    this.angle = (Math.random() * (Settings.max_rotation * 2) - Settings.max_rotation) * (Math.PI / 180);
+    this.rotation = this.angle / (Settings.max_age / Settings.rotate_speed);
+
     // Add new particle to the index
     particles[particleIndex++] = this;
   }
@@ -254,6 +261,9 @@ window.onload = () => {
     this.vel_x += this.grav_x * delta;
     this.vel_y += this.grav_y * delta;
 
+    
+    this.angle -= this.rotation * delta;
+
     // Age the particle
     this.age += delta;
 
@@ -270,10 +280,14 @@ window.onload = () => {
     else this.opacity = 1;
 
     // Spawn the particle
+    context.save();
+    context.translate(this.x, this.y);
+    context.rotate(this.angle);
     context.font = `${this.size}px Arial`;
     context.fillStyle = `rgba(${Settings.text_color.r}, ${Settings.text_color.g}, ${Settings.text_color.b}, ${this.opacity})`;
     context.textAlign = 'center';
-    context.fillText(this.text, this.x, this.y);
+    context.fillText(this.text, 0, 0);
+    context.restore();
   };
 
   // the last frame time
